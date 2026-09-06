@@ -6,6 +6,10 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 
+// Routes
+const routes = require('./routes');
+app.use('/api', routes);
+
 // Security middleware
 app.use(helmet());
 

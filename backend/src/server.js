@@ -45,16 +45,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-// Create HTTP server with Socket.io
+// Create HTTP server with Socket.io (listening happens in index.js)
 const server = http.createServer(app);
 initSocket(server);
-
-// Start listening only when run directly (not imported for tests)
-if (require.main === module) {
-  const PORT = process.env.PORT || 3001;
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
 
 module.exports = { app, server };

@@ -1,4 +1,3 @@
-const { getSocketIO } = require('./socketManager');
 const { v4: uuidv4 } = require('uuid');
 
 // Active calls storage (in production, use Redis/DB)
@@ -13,7 +12,7 @@ function createCall(callerId, calleeId) {
     id: callId,
     callerId,
     calleeId,
-    status: 'initiated', // initiated, connected, ended, rejected
+    status: 'initiated',
     createdAt: new Date(),
   };
   activeCalls.set(callId, call);
@@ -56,9 +55,9 @@ function endCall(callId) {
 }
 
 /**
- * Handle incoming call request
+ * Handle incoming call request - io passed in to avoid circular deps
  */
-function handleCallRequest(socket, data) {
+function handleCallRequest(io, socket, data) {
   const { toUserId, fromUsername } = data;
   const callerId = socket.userId;
 
@@ -67,17 +66,13 @@ function handleCallRequest(socket, data) {
     return;
   }
 
-  // Create the call
   const call = createCall(callerId, toUserId);
 
-  // Inform caller
   socket.emit('call_request_sent', {
     callId: call.id,
     toUserId,
   });
 
-  // Notify callee
-  const io = getSocketIO();
   io.to(`user:${toUserId}`).emit('incoming_call', {
     callId: call.id,
     fromUserId: callerId,
@@ -89,7 +84,7 @@ function handleCallRequest(socket, data) {
 /**
  * Handle call acceptance
  */
-function handleCallAccept(socket, data) {
+function handleCallAccept(io, socket, data) {
   const { callId } = data;
   const calleeId = socket.userId;
 
@@ -104,11 +99,8 @@ function handleCallAccept(socket, data) {
     return;
   }
 
-  // Update status
   updateCallStatus(callId, 'connected');
 
-  // Notify both parties
-  const io = getSocketIO();
   io.to(`user:${call.callerId}`).emit('call_accepted', {
     callId,
     calleeId,
@@ -125,7 +117,7 @@ function handleCallAccept(socket, data) {
 /**
  * Handle call rejection
  */
-function handleCallReject(socket, data) {
+function handleCallReject(io, socket, data) {
   const { callId, reason } = data;
   const calleeId = socket.userId;
 
@@ -140,25 +132,21 @@ function handleCallReject(socket, data) {
     return;
   }
 
-  // Update status
   updateCallStatus(callId, 'rejected');
 
-  // Notify caller
-  const io = getSocketIO();
   io.to(`user:${call.callerId}`).emit('call_rejected', {
     callId,
     reason: reason || 'User declined the call',
     timestamp: new Date(),
   });
 
-  // Clean up
   activeCalls.delete(callId);
 }
 
 /**
  * Handle call end
  */
-function handleCallEnd(socket, data) {
+function handleCallEnd(io, socket, data) {
   const { callId } = data;
   const userId = socket.userId;
 
@@ -168,33 +156,27 @@ function handleCallEnd(socket, data) {
     return;
   }
 
-  // Verify user is part of the call
   if (call.callerId !== userId && call.calleeId !== userId) {
     socket.emit('call_error', { error: 'Not authorized for this call' });
     return;
   }
 
-  // Update status
   updateCallStatus(callId, 'ended');
 
-  // Notify the other party
-  const io = getSocketIO();
   const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
-
   io.to(`user:${otherUserId}`).emit('call_ended', {
     callId,
     endedBy: userId,
     timestamp: new Date(),
   });
 
-  // Clean up
   activeCalls.delete(callId);
 }
 
 /**
  * Handle WebRTC signaling data (offer, answer, ICE candidates)
  */
-function handleSignalingData(socket, data) {
+function handleSignalingData(io, socket, data) {
   const { callId, type, payload } = data;
   const userId = socket.userId;
 
@@ -204,20 +186,16 @@ function handleSignalingData(socket, data) {
     return;
   }
 
-  // Verify user is part of the call
   if (call.callerId !== userId && call.calleeId !== userId) {
     socket.emit('signaling_error', { error: 'Not authorized for this call' });
     return;
   }
 
-  // Determine the other user
   const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
 
-  // Forward the signaling data
-  const io = getSocketIO();
   io.to(`user:${otherUserId}`).emit('signaling_data', {
     callId,
-    type, // 'offer', 'answer', 'ice_candidate'
+    type,
     payload,
     fromUserId: userId,
     timestamp: new Date(),
@@ -242,7 +220,6 @@ function handleLeaveUserRoom(socket) {
   console.log(`User ${userId} left room user:${userId}`);
 }
 
-// Export handlers
 module.exports = {
   createCall,
   getCall,

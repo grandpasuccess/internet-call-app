@@ -7,6 +7,13 @@ const Call = require('../models/Call');
 let io = null;
 
 /**
+ * Get the Socket.io instance (for external use)
+ */
+function getSocketIO() {
+  return io;
+}
+
+/**
  * Initialize Socket.io server with auth, presence, and signaling
  */
 function initialize(httpServer) {
@@ -42,8 +49,8 @@ function initialize(httpServer) {
       try {
         // Persist call to database
         const call = await Call.create(userId, data.toUserId);
-        // Forward to signaling manager (in-memory + socket broadcast)
-        signalingManager.handleCallRequest(socket, {
+        // Forward to signaling manager with io instance
+        signalingManager.handleCallRequest(io, socket, {
           ...data,
           callId: call.id,
         });
@@ -63,7 +70,7 @@ function initialize(httpServer) {
           return;
         }
         await call.updateStatus('connected');
-        signalingManager.handleCallAccept(socket, data);
+        signalingManager.handleCallAccept(io, socket, data);
       } catch (err) {
         console.error('call_accept error:', err);
         socket.emit('call_error', { error: 'Failed to accept call' });
@@ -79,7 +86,7 @@ function initialize(httpServer) {
           return;
         }
         await call.updateStatus('rejected');
-        signalingManager.handleCallReject(socket, data);
+        signalingManager.handleCallReject(io, socket, data);
       } catch (err) {
         console.error('call_reject error:', err);
         socket.emit('call_error', { error: 'Failed to reject call' });
@@ -95,7 +102,7 @@ function initialize(httpServer) {
           return;
         }
         await call.end();
-        signalingManager.handleCallEnd(socket, data);
+        signalingManager.handleCallEnd(io, socket, data);
       } catch (err) {
         console.error('call_end error:', err);
         socket.emit('call_error', { error: 'Failed to end call' });
@@ -105,7 +112,7 @@ function initialize(httpServer) {
     // --- WebRTC Signaling Events ---
 
     socket.on('offer', (data) => {
-      signalingManager.handleSignalingData(socket, {
+      signalingManager.handleSignalingData(io, socket, {
         callId: data.callId,
         type: 'offer',
         payload: data.offer,
@@ -113,7 +120,7 @@ function initialize(httpServer) {
     });
 
     socket.on('answer', (data) => {
-      signalingManager.handleSignalingData(socket, {
+      signalingManager.handleSignalingData(io, socket, {
         callId: data.callId,
         type: 'answer',
         payload: data.answer,
@@ -121,7 +128,7 @@ function initialize(httpServer) {
     });
 
     socket.on('ice_candidate', (data) => {
-      signalingManager.handleSignalingData(socket, {
+      signalingManager.handleSignalingData(io, socket, {
         callId: data.callId,
         type: 'ice_candidate',
         payload: data.candidate,
@@ -142,13 +149,6 @@ function initialize(httpServer) {
     });
   });
 
-  return io;
-}
-
-/**
- * Get the Socket.io instance
- */
-function getSocketIO() {
   return io;
 }
 

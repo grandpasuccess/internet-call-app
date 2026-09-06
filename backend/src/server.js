@@ -6,21 +6,21 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 
-// Routes
-const routes = require('./routes');
-app.use('/api', routes);
-
-// Security middleware
+// Security middleware (before routes for security headers on all responses)
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration (before routes)
 app.use(cors({
   origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
   credentials: true,
 }));
 
-// Body parsing
+// Body parsing (MUST be before routes to parse request bodies)
 app.use(express.json());
+
+// Routes
+const routes = require('./routes');
+app.use('/api', routes);
 
 // Health check route
 app.get('/health', (req, res) => {

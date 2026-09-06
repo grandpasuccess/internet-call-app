@@ -1,64 +1,49 @@
-const { v4: uuidv4 } = require('uuid');
-
-// Active calls storage (in production, use Redis/DB)
-const activeCalls = new Map();
+const Call = require('../models/Call');
 
 /**
- * Create a new call between two users
+ * Create a new call record in the database
+ * Returns the created Call instance
  */
-function createCall(callerId, calleeId) {
-  const callId = uuidv4();
-  const call = {
-    id: callId,
-    callerId,
-    calleeId,
-    status: 'initiated',
-    createdAt: new Date(),
-  };
-  activeCalls.set(callId, call);
-  return call;
+async function createCall(callerId, calleeId) {
+  return await Call.create(callerId, calleeId);
 }
 
 /**
- * Get an active call by ID
+ * Get an active call by ID from the database
  */
-function getCall(callId) {
-  return activeCalls.get(callId);
-}
-
-/**
- * Update call status
- */
-function updateCallStatus(callId, status) {
-  const call = activeCalls.get(callId);
-  if (call) {
-    call.status = status;
-    if (status === 'ended') {
-      call.endedAt = new Date();
-    }
-    activeCalls.set(callId, call);
+async function getCall(callId) {
+  const call = await Call.findById(callId);
+  // Only return if it's still active (not ended/rejected)
+  if (call && ['initiated', 'connected'].includes(call.status)) {
+    return call;
   }
-  return call;
+  return null;
 }
 
 /**
- * End a call
+ * Update call status in the database
  */
-function endCall(callId) {
-  const call = activeCalls.get(callId);
-  if (call) {
-    call.status = 'ended';
-    call.endedAt = new Date();
-    activeCalls.delete(callId);
-  }
-  return call;
+async function updateCallStatus(callId, status) {
+  const call = await Call.findById(callId);
+  if (!call) return null;
+  return call.updateStatus(status);
 }
 
 /**
- * Handle incoming call request - io passed in to avoid circular deps
+ * End a call in the database
+ */
+async function endCall(callId) {
+  const call = await Call.findById(callId);
+  if (!call) return null;
+  return call.end();
+}
+
+/**
+ * Handle incoming call request
+ * socketManager creates the DB record first, then delegates here
  */
 function handleCallRequest(io, socket, data) {
-  const { toUserId, fromUsername } = data;
+  const { toUserId, fromUsername, callId } = data;
   const callerId = socket.userId;
 
   if (!toUserId) {
@@ -66,29 +51,27 @@ function handleCallRequest(io, socket, data) {
     return;
   }
 
-  const call = createCall(callerId, toUserId);
-
   socket.emit('call_request_sent', {
-    callId: call.id,
+    callId,
     toUserId,
   });
 
   io.to(`user:${toUserId}`).emit('incoming_call', {
-    callId: call.id,
+    callId,
     fromUserId: callerId,
     fromUsername: fromUsername || 'Unknown',
-    timestamp: call.createdAt,
+    timestamp: new Date(),
   });
 }
 
 /**
  * Handle call acceptance
  */
-function handleCallAccept(io, socket, data) {
+async function handleCallAccept(io, socket, data) {
   const { callId } = data;
   const calleeId = socket.userId;
 
-  const call = getCall(callId);
+  const call = await getCall(callId);
   if (!call) {
     socket.emit('call_error', { error: 'Call not found' });
     return;
@@ -99,7 +82,7 @@ function handleCallAccept(io, socket, data) {
     return;
   }
 
-  updateCallStatus(callId, 'connected');
+  await updateCallStatus(callId, 'connected');
 
   io.to(`user:${call.callerId}`).emit('call_accepted', {
     callId,
@@ -117,11 +100,11 @@ function handleCallAccept(io, socket, data) {
 /**
  * Handle call rejection
  */
-function handleCallReject(io, socket, data) {
+async function handleCallReject(io, socket, data) {
   const { callId, reason } = data;
   const calleeId = socket.userId;
 
-  const call = getCall(callId);
+  const call = await getCall(callId);
   if (!call) {
     socket.emit('call_error', { error: 'Call not found' });
     return;
@@ -132,25 +115,23 @@ function handleCallReject(io, socket, data) {
     return;
   }
 
-  updateCallStatus(callId, 'rejected');
+  await updateCallStatus(callId, 'rejected');
 
   io.to(`user:${call.callerId}`).emit('call_rejected', {
     callId,
     reason: reason || 'User declined the call',
     timestamp: new Date(),
   });
-
-  activeCalls.delete(callId);
 }
 
 /**
  * Handle call end
  */
-function handleCallEnd(io, socket, data) {
+async function handleCallEnd(io, socket, data) {
   const { callId } = data;
   const userId = socket.userId;
 
-  const call = getCall(callId);
+  const call = await getCall(callId);
   if (!call) {
     socket.emit('call_error', { error: 'Call not found' });
     return;
@@ -161,7 +142,7 @@ function handleCallEnd(io, socket, data) {
     return;
   }
 
-  updateCallStatus(callId, 'ended');
+  await endCall(callId);
 
   const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
   io.to(`user:${otherUserId}`).emit('call_ended', {
@@ -169,8 +150,6 @@ function handleCallEnd(io, socket, data) {
     endedBy: userId,
     timestamp: new Date(),
   });
-
-  activeCalls.delete(callId);
 }
 
 /**
@@ -180,25 +159,29 @@ function handleSignalingData(io, socket, data) {
   const { callId, type, payload } = data;
   const userId = socket.userId;
 
-  const call = getCall(callId);
-  if (!call) {
-    socket.emit('signaling_error', { error: 'Call not found' });
-    return;
-  }
+  // For signaling we need the call to exist; use DB lookup
+  Call.findById(callId).then((call) => {
+    if (!call || !['initiated', 'connected'].includes(call.status)) {
+      socket.emit('signaling_error', { error: 'Call not found or not active' });
+      return;
+    }
 
-  if (call.callerId !== userId && call.calleeId !== userId) {
-    socket.emit('signaling_error', { error: 'Not authorized for this call' });
-    return;
-  }
+    if (call.callerId !== userId && call.calleeId !== userId) {
+      socket.emit('signaling_error', { error: 'Not authorized for this call' });
+      return;
+    }
 
-  const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
+    const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
 
-  io.to(`user:${otherUserId}`).emit('signaling_data', {
-    callId,
-    type,
-    payload,
-    fromUserId: userId,
-    timestamp: new Date(),
+    io.to(`user:${otherUserId}`).emit('signaling_data', {
+      callId,
+      type,
+      payload,
+      fromUserId: userId,
+      timestamp: new Date(),
+    });
+  }).catch(() => {
+    socket.emit('signaling_error', { error: 'Failed to lookup call' });
   });
 }
 

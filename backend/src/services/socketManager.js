@@ -47,9 +47,9 @@ function initialize(httpServer) {
     socket.on('call_request', async (data) => {
       console.log(`Call request: ${userId} → ${data.toUserId}`);
       try {
-        // Persist call to database
+        // Create call record in DB
         const call = await Call.create(userId, data.toUserId);
-        // Forward to signaling manager with io instance
+        // Delegate signaling to signalingManager (does NOT create another call)
         signalingManager.handleCallRequest(io, socket, {
           ...data,
           callId: call.id,

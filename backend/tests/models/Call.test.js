@@ -1,17 +1,4 @@
-const { describe, it, expect, beforeEach, jest } = require('@jest/globals');
-
-// Mock the socket authenticate middleware
-jest.mock('../../src/middleware/socketAuthenticate', () => {
-  return jest.fn((socket, next) => {
-    // For testing, assume token is always valid
-    if (socket.handshake?.auth?.token) {
-      socket.userId = 'test-user-' + Math.random().toString(36).substr(2, 9);
-      next();
-    } else {
-      next(new Error('No token'));
-    }
-  });
-});
+const { describe, it, expect, beforeEach } = require('@jest/globals');
 
 // Mock the database before requiring Call model
 jest.mock('../../src/db', () => ({

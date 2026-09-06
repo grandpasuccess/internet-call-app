@@ -27,8 +27,8 @@ jest.mock('../../src/db', () => {
   };
 });
 
-// Now require after mocks are set up
-const app = require('../../src/server');
+// Now require after mocks are set up - destructure app from export
+const { app } = require('../../src/server');
 
 describe('Auth Endpoints', () => {
   let mockedPool, mockedRedis;

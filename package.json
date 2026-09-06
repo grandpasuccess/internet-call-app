@@ -1,0 +1,13 @@
+{
+  "name": "internet-call-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Internet Call App - Production-ready 1-to-1 audio/video calling",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter './backend' --filter './frontend/web' run dev",
+    "install": "pnpm install --frozen-lockfile",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint"
+  },
+  "devDependencies": {}
+}

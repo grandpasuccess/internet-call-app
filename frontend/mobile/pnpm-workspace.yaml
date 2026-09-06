@@ -1,0 +1,2 @@
+allowBuilds:
+  react-native-webrtc: set this to true or false

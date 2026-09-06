@@ -6,11 +6,11 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest --coverage",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage --coverageReporters=text",
-    "lint": "eslint src/",
+    "dev": "node --watch src/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --coverageReporters=text",
+    "lint": "node_modules/eslint/bin/eslint.js src/",
     "migrate": "node scripts/migrate.js",
     "migrate:rollback": "node scripts/migrate.js rollback"
   },

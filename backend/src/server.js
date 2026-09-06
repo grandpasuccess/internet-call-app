@@ -49,4 +49,10 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 initSocket(server);
 
+// Start listening
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 module.exports = { app, server };

@@ -1,0 +1,39 @@
+{
+  "name": "internet-call-app-backend",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Internet Call App - Backend Server",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --coverageReporters=text",
+    "lint": "eslint src/",
+    "migrate": "node scripts/migrate.js",
+    "migrate:rollback": "node scripts/migrate.js rollback"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "body-parser": "^1.20.2",
+    "socket.io": "^4.6.1",
+    "pg": "^8.11.3",
+    "redis": "^4.6.7",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.50.0"
+  }
+}

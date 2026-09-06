@@ -1,0 +1,9 @@
+expo﻿
+node_modules
+.webpack
+.storybook
+android
+ios
+*.log
+.env
+.env.local

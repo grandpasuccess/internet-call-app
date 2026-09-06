@@ -23,7 +23,7 @@ describe('Authenticate Middleware', () => {
   beforeEach(() => {
     req = { headers: {} };
     res = createMockRes();
-    // Use global jest.fn() available in Jest environment
+    // Use global jest.fn() - do NOT import jest from @jest/globals
     next = jest.fn();
   });
 

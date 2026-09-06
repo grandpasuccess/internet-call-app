@@ -1,21 +1,25 @@
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+// Initialize Socket.io
+const { initialize: initSocket } = require('./services/socketManager');
+
 const app = express();
 
-// Security middleware (before routes for security headers on all responses)
+// Security middleware
 app.use(helmet());
 
-// CORS configuration (before routes)
+// CORS configuration
 app.use(cors({
   origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
   credentials: true,
 }));
 
-// Body parsing (MUST be before routes to parse request bodies)
+// Body parsing
 app.use(express.json());
 
 // Routes
@@ -41,4 +45,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-module.exports = app;
+// Create HTTP server with Socket.io
+const server = http.createServer(app);
+initSocket(server);
+
+module.exports = { app, server };

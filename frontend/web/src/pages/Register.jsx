@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { initSocket } from '../services/socket';
-
-const PASSWORD_RULES = [
-  'At least 8 characters',
-  'One uppercase letter',
-  'One number',
-];
+import { useAuth } from '../hooks/useAuth';
 
 export default function Register() {
+  const { register } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,11 +49,10 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const data = await authService.register(username, email, password);
-      initSocket(data.token);
-      navigate('/dashboard');
+      const data = await register(username, email, password);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      const serverError = err.response?.data?.error || 'Registration failed';
+      const serverError = err.message || err.response?.data?.error || 'Registration failed';
       const serverCode = err.response?.data?.code;
       setErrors({
         submit: serverCode === 'DUPLICATE_EMAIL' ? 'Email already registered' :

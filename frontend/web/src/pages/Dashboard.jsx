@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getSocket, onSocketEvent, initSocket } from '../services/socket';
+import { getSocket, onSocketEvent } from '../services/socket';
 import { callService } from '../services/callService';
 import { authService } from '../services/authService';
-import { api } from '../services/api';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -15,28 +14,12 @@ export default function Dashboard() {
 
   // Fetch online users on mount
   useEffect(() => {
-    if (!user) return;
-
-    const fetchOnlineUsers = async () => {
-      try {
-        const res = await api.get('/users/online');
-        setOnlineUsers(res.data.users || []);
-      } catch (err) {
-        console.error('Failed to fetch online users:', err);
-      }
-    };
-
-    fetchOnlineUsers();
-  }, [user]);
-
-  // Listen for online/offline events
-  useEffect(() => {
-    if (!socket) return;
+    if (!user || !socket) return;
 
     const unsubOnline = onSocketEvent('user_online', ({ userId }) => {
       setOnlineUsers((prev) => {
         if (prev.some((u) => u.id === userId)) return prev;
-        return [...prev, { id: userId, onlineAt: Date.now() }];
+        return [...prev, { id: userId, username: `user_${userId}`, onlineAt: Date.now() }];
       });
     });
 
@@ -112,7 +95,7 @@ export default function Dashboard() {
     setCallStatus('ringing');
 
     try {
-      const call = await callService.initiateCall(toUserId, user?.username || 'You');
+      const call = await callService.requestCall(toUserId, user?.username || 'You');
       setActiveCall({
         callId: call.callId || call.id,
         toUserId,

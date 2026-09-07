@@ -4,7 +4,14 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 let socket = null;
 
-export function initSocket(token) {
+/**
+ * Initialize socket connection with auth token
+ */
+export const connect = (token) => {
+  if (socket) {
+    socket.disconnect();
+  }
+
   socket = io(SOCKET_URL, {
     auth: { token },
     reconnection: true,
@@ -14,50 +21,69 @@ export function initSocket(token) {
     transports: ['websocket', 'polling'],
   });
 
-  socket.on('connect', () => {
-    console.log('[Socket] Connected:', socket.id);
+  return new Promise((resolve, reject) => {
+    socket.on('connect', () => {
+      console.log('Socket connected:', socket.id);
+      resolve(socket);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+      reject(error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
   });
+};
 
-  socket.on('connect_error', (error) => {
-    console.error('[Socket] Connection error:', error.message);
-  });
+/**
+ * Get current socket instance
+ */
+export const getSocket = () => socket;
 
-  socket.on('disconnect', (reason) => {
-    console.log('[Socket] Disconnected:', reason);
-  });
-
-  socket.on('user_online', (data) => {
-    console.log('[Socket] User online:', data.userId);
-  });
-
-  socket.on('user_offline', (data) => {
-    console.log('[Socket] User offline:', data.userId);
-  });
-
-  return socket;
-}
-
-export function getSocket() {
-  return socket;
-}
-
-export function closeSocket() {
+/**
+ * Disconnect socket
+ */
+export const disconnect = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
   }
-}
+};
 
-export function emitSocketEvent(event, data) {
+/**
+ * Add event listener, returns unsubscribe function
+ */
+export const onSocketEvent = (event, callback) => {
+  on(event, callback);
+  return () => off(event, callback);
+};
+
+/**
+ * Emit event with data
+ */
+export const emit = (event, data) => {
   if (socket && socket.connected) {
     socket.emit(event, data);
   }
-}
+};
 
-export function onSocketEvent(event, callback) {
+/**
+ * Listen for event
+ */
+export const on = (event, callback) => {
   if (socket) {
     socket.on(event, callback);
-    return () => socket.off(event, callback);
   }
-  return () => {};
-}
+};
+
+/**
+ * Remove event listener
+ */
+export const off = (event, callback) => {
+  if (socket) {
+    socket.off(event, callback);
+  }
+};

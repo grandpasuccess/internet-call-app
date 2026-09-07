@@ -47,4 +47,8 @@ export const authService = {
   clearToken() {
     localStorage.removeItem('token');
   },
+
+  clearUser() {
+    localStorage.removeItem('user');
+  },
 };

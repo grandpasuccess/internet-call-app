@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { initSocket } from '../services/socket';
+import { useAuth } from '../hooks/useAuth';
+import { connectSocket } from '../services/socket';
 
 export default function Login() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,11 +17,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await authService.login(email, password);
-      initSocket(data.token);
-      navigate('/dashboard');
+      const data = await login(email, password);
+      connectSocket(data.token);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+      setError(err.message || err.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

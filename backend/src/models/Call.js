@@ -110,8 +110,8 @@ class Call {
       id: this.id,
       callerId: this.callerId,
       calleeId: this.calleeId,
-      startedAt: this.startedAt,
-      endedAt: this.endedAt,
+      startedAt: this.startedAt ? this.startedAt.toISOString() : null,
+      endedAt: this.endedAt ? this.endedAt.toISOString() : null,
       durationSeconds: this.durationSeconds,
       status: this.status,
     };

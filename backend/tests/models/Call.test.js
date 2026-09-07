@@ -1,4 +1,4 @@
-const { describe, it, expect, beforeEach, jest } = require('@jest/globals');
+const { describe, it, expect, beforeEach } = require('@jest/globals');
 
 // Mock pg Pool
 jest.mock('../../src/db', () => ({

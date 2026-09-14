@@ -1,5 +1,3 @@
-import { useSocket, onSocketEvent } from '../services/socket';
-
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

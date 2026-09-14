@@ -1,36 +1,141 @@
-import api from './api';
+import {
+  onSocket,
+  offSocket,
+  emitSocketEvent,
+} from './socket';
+
+/**
+ * Call-related socket event handlers
+ * Listens for incoming calls, call status updates, and signaling data
+ */
+let handlers = {};
 
 export const callService = {
-  async initiateCall(toUserId, fromUsername) {
-    const res = await api.post('/api/calls/initiate', {
-      toUserId,
-      fromUsername,
+  /**
+   * Initialize call-related socket listeners
+   */
+  init(onIncomingCall, onCallAccepted, onCallEnded, onCallError) {
+    onSocket('incoming_call', (data) => {
+      onIncomingCall(data);
     });
-    return res.data;
+
+    onSocket('call_accepted', (data) => {
+      onCallAccepted(data);
+    });
+
+    onSocket('call_rejected', (data) => {
+      onCallEnded(data);
+    });
+
+    onSocket('call_ended', (data) => {
+      onCallEnded(data);
+    });
+
+    onSocket('call_error', (data) => {
+      onCallError(data);
+    });
+
+    onSocket('call_connected', (data) => {
+      onCallAccepted(data);
+    });
   },
 
-  async acceptCall(callId) {
-    const res = await api.post('/api/calls/accept', { callId });
-    return res.data;
+  /**
+   * Send call request to another user
+   */
+  requestCall(toUserId, fromUsername) {
+    emitSocketEvent('call_request', {
+      toUserId,
+      fromUsername: fromUsername || 'Unknown',
+    });
   },
 
-  async rejectCall(callId, reason) {
-    const res = await api.post('/api/calls/reject', { callId, reason });
-    return res.data;
+  /**
+   * Accept an incoming call
+   */
+  acceptCall(callId) {
+    emitSocketEvent('call_accept', { callId });
   },
 
-  async endCall(callId) {
-    const res = await api.post('/api/calls/end', { callId });
-    return res.data;
+  /**
+   * Reject an incoming call
+   */
+  rejectCall(callId, reason) {
+    emitSocketEvent('call_reject', {
+      callId,
+      reason: reason || 'User declined',
+    });
   },
 
-  async getCallHistory(userId, limit = 20) {
-    const res = await api.get(`/api/calls/history/${userId}?limit=${limit}`);
-    return res.data;
+  /**
+   * End the current call
+   */
+  endCall(callId) {
+    emitSocketEvent('call_end', { callId });
   },
 
-  async getActiveCalls(userId) {
-    const res = await api.get(`/api/calls/active/${userId}`);
-    return res.data;
+  /**
+   * Send WebRTC offer (SDP)
+   */
+  sendOffer(toUserId, offer) {
+    emitSocketEvent('offer', {
+      toUserId,
+      offer: {
+        sdp: offer.sdp,
+        type: offer.type || 'offer',
+      },
+    });
+  },
+
+  /**
+   * Send WebRTC answer (SDP)
+   */
+  sendAnswer(toUserId, answer) {
+    emitSocketEvent('answer', {
+      toUserId,
+      answer: {
+        sdp: answer.sdp,
+        type: answer.type || 'answer',
+      },
+    });
+  },
+
+  /**
+   * Send ICE candidate
+   */
+  sendICECandidate(toUserId, candidate) {
+    emitSocketEvent('ice_candidate', {
+      toUserId,
+      candidate: {
+        candidate: candidate.candidate,
+        sdpMid: candidate.sdpMid,
+        sdpMLineIndex: candidate.sdpMLineIndex,
+      },
+    });
+  },
+
+  /**
+   * Handle incoming offer
+   */
+  handleOffer(offerData) {
+    return offerData;
+  },
+
+  /**
+   * Handle incoming answer
+   */
+  handleAnswer(answerData) {
+    return answerData;
+  },
+
+  /**
+   * Handle incoming ICE candidate
+   */
+  handleICECandidate(candidateData) {
+    return candidateData;
+  },
+
+  cleanUp() {
+    handlers = {};
   },
 };

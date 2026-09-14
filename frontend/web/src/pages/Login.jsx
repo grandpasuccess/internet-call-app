@@ -7,21 +7,23 @@ export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setErrorMessage('');
     setLoading(true);
 
     try {
       const data = await login(email, password);
-      connectSocket(data.token);
+      if (data?.token) {
+        connectSocket(data.token);
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.message || err.response?.data?.error || 'Login failed. Please check your credentials.');
+      setErrorMessage(err.message || err.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -31,7 +33,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Sign In</h1>
-        {error && <div className="error-msg">{error}</div>}
+        {errorMessage && <div className="error-msg">{errorMessage}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>

@@ -7,7 +7,7 @@ let socket = null;
 /**
  * Initialize socket connection with auth token
  */
-export const connect = (token) => {
+export const connectSocket = (token) => {
   if (socket) {
     socket.disconnect();
   }
@@ -46,7 +46,7 @@ export const getSocket = () => socket;
 /**
  * Disconnect socket
  */
-export const disconnect = () => {
+export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
@@ -64,7 +64,7 @@ export const onSocketEvent = (event, callback) => {
 /**
  * Emit event with data
  */
-export const emit = (event, data) => {
+export const emitSocketEvent = (event, data) => {
   if (socket && socket.connected) {
     socket.emit(event, data);
   }
@@ -73,7 +73,7 @@ export const emit = (event, data) => {
 /**
  * Listen for event
  */
-export const on = (event, callback) => {
+export const onSocket = (event, callback) => {
   if (socket) {
     socket.on(event, callback);
   }
@@ -82,8 +82,19 @@ export const on = (event, callback) => {
 /**
  * Remove event listener
  */
-export const off = (event, callback) => {
+export const offSocket = (event, callback) => {
   if (socket) {
     socket.off(event, callback);
   }
+};
+
+// Alias for backward compatibility
+export const connect = connectSocket;
+export const disconnect = disconnectSocket;
+
+// Service object for useCallSocket.js
+export const socketService = {
+  on: onSocket,
+  off: offSocket,
+  emit: emitSocketEvent,
 };

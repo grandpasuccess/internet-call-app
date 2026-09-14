@@ -1,7 +1,3 @@
-const User = require('../models/User');
-const { generateToken } = require('../utils/tokenUtils');
-const sessionManager = require('../services/sessionManager');
-
 /**
  * Validation utilities for user input
  */

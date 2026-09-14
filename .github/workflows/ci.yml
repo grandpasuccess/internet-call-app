@@ -64,8 +64,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install backend dependencies
-        working-directory: ./backend
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --filter ./backend --no-frozen-lockfile
 
       - name: Run backend tests
         working-directory: ./backend
@@ -116,8 +115,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install frontend dependencies
-        working-directory: ./frontend/web
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --filter ./frontend/web --no-frozen-lockfile
 
       - name: Build frontend
         working-directory: ./frontend/web
@@ -148,8 +146,7 @@ jobs:
           version: 8
 
       - name: Install backend dependencies
-        working-directory: ./backend
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --filter ./backend --no-frozen-lockfile
 
       - name: Run ESLint
         working-directory: ./backend

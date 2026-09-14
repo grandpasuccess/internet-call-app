@@ -10,6 +10,7 @@ jobs:
   backend:
     name: Backend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       postgres:
@@ -37,36 +38,17 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
+      - name: Install backend deps
+        working-directory: ./backend
+        run: npm install --no-package-lock
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install backend dependencies
-        run: pnpm install --filter ./backend --no-frozen-lockfile
-
-      - name: Run backend tests
+      - name: Run tests
         working-directory: ./backend
         env:
           NODE_ENV: test
@@ -77,52 +59,33 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret-key-for-ci-cd-pipeline
+          JWT_SECRET: test-secret-key-for-ci-pipeline
           JWT_EXPIRES_IN: 24h
           CORS_ORIGIN: http://localhost:3000,http://localhost:19000
           STUN_SERVERS: stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
-        run: pnpm test -- --no-coverage
+        run: npm test -- --no-coverage
 
   frontend:
     name: Frontend Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install frontend dependencies
-        run: pnpm install --filter ./frontend/web --no-frozen-lockfile
+      - name: Install frontend deps
+        working-directory: ./frontend/web
+        run: npm install --no-package-lock
 
       - name: Build frontend
         working-directory: ./frontend/web
-        run: pnpm build
+        run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/web/dist/
@@ -130,24 +93,19 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
-      - name: Install backend dependencies
-        run: pnpm install --filter ./backend --no-frozen-lockfile
+      - name: Install backend deps
+        working-directory: ./backend
+        run: npm install --no-package-lock
 
       - name: Run ESLint
         working-directory: ./backend
-        run: pnpm lint
+        run: npm run lint

@@ -40,7 +40,7 @@ const presenceManager = {
    */
   async getOnlineUsers() {
     const keys = await redis.keys('presence:*');
-    if (keys.length === 0) return [];
+    if (keys.length === 0) { return []; }
     
     const onlineUsers = [];
     for (const key of keys) {

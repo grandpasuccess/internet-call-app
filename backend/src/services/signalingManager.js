@@ -25,7 +25,7 @@ async function getCall(callId) {
  */
 async function updateCallStatus(callId, status) {
   const call = await Call.findById(callId);
-  if (!call) return null;
+  if (!call) { return null; }
   return call.updateStatus(status);
 }
 
@@ -34,7 +34,7 @@ async function updateCallStatus(callId, status) {
  */
 async function endCall(callId) {
   const call = await Call.findById(callId);
-  if (!call) return null;
+  if (!call) { return null; }
   return call.end();
 }
 

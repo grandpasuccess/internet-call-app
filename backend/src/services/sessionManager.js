@@ -23,7 +23,7 @@ const sessionManager = {
    * @returns {Promise<string|null>} - The user ID or null if not found
    */
   async getSession(token) {
-    if (!token) return null;
+    if (!token) { return null; }
     const userId = await redis.get(`session:${token}`);
     return userId || null;
   },
@@ -34,7 +34,7 @@ const sessionManager = {
    * @returns {Promise<void>}
    */
   async deleteSession(token) {
-    if (!token) return;
+    if (!token) { return; }
     await redis.del(`session:${token}`);
   },
 

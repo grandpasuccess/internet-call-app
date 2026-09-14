@@ -25,51 +25,89 @@ A production-ready 1-to-1 audio/video calling application supporting web and mob
 ```
 internet-call-app/
 ├── backend/          # Node.js/Express server
+│   ├── src/          # Source code
+│   ├── tests/        # Test suites (94 tests)
+│   └── scripts/      # DB migrations
 ├── frontend/
 │   ├── web/         # React web app (Vite)
 │   └── mobile/      # React Native app (Expo)
 ├── docs/            # Documentation
-└── docker-compose.yml
+├── .github/         # GitHub Actions
+├── docker-compose.yml
+└── README.md
 ```
 
 ## Quick Start
 
-See [SETUP.md](./docs/SETUP.md) for detailed setup instructions.
-
 ### Prerequisites
 
-- Node.js >= 16.0.0
-- pnpm
-- Docker & Docker Compose (for local development)
-- PostgreSQL (or use Docker)
-- Redis (or use Docker)
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+- PostgreSQL >= 14
+- Redis >= 7
 
-### Commands
+### 1. Clone and Install
 
 ```bash
-# Install dependencies
-pnpm install --recursive
-
-# Start development (all services via Docker)
-docker-compose up -d
-
-# Start backend only
-cd backend && pnpm dev
-
-# Start web frontend
-cd frontend/web && pnpm dev
-
-# Start mobile app
-cd frontend/mobile && pnpm start
+git clone https://github.com/grandpasuccess/internet-call-app.git
+cd internet-call-app
+pnpm install
 ```
 
-## Architecture
+### 2. Set Up Environment
 
-See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for system design details.
+```bash
+# Backend
+cp backend/.env.example backend/.env
+# Edit backend/.env with your database and Redis credentials
+
+# Frontend Web
+cp frontend/web/.env.example frontend/web/.env
+```
+
+### 3. Set Up Database
+
+```bash
+# Create PostgreSQL database
+createdb internet_call_app
+
+# Run migrations
+cd backend && pnpm migrate
+```
+
+### 4. Start Development
+
+```bash
+# Terminal 1: Start backend
+cd backend && pnpm dev
+
+# Terminal 2: Start web frontend
+cd frontend/web && pnpm dev
+```
+
+The web app will be available at `http://localhost:3000`.
+
+### 5. Run Tests
+
+```bash
+# Backend tests
+cd backend && pnpm test
+
+# Frontend tests (when implemented)
+cd frontend/web && pnpm test
+```
 
 ## API Documentation
 
-See [API.md](./docs/API.md) for endpoint reference.
+See [docs/API.md](./docs/API.md) for endpoint reference.
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for system design details.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for branch naming, commit format, and PR rules.
 
 ## License
 

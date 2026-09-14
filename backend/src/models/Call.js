@@ -5,7 +5,7 @@ const pool = require('../db');
  */
 class Call {
   constructor(row) {
-    if (!row) return;
+    if (!row) { return; }
     this.id = row.id;
     this.callerId = row.caller_id;
     this.calleeId = row.callee_id;
@@ -36,7 +36,7 @@ class Call {
       'SELECT * FROM calls WHERE id = $1',
       [id]
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) { return null; }
     return new Call(result.rows[0]);
   }
 

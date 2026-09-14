@@ -26,7 +26,7 @@ class User {
       'SELECT * FROM users WHERE id = $1',
       [id]
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) { return null; }
     return new User(result.rows[0]);
   }
 
@@ -38,7 +38,7 @@ class User {
       'SELECT * FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) { return null; }
     return new User(result.rows[0]);
   }
 
@@ -50,7 +50,7 @@ class User {
       'SELECT * FROM users WHERE username = $1',
       [username]
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) { return null; }
     return new User(result.rows[0]);
   }
 

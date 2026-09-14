@@ -3,7 +3,7 @@
  * Entry point for the Express server
  */
 
-const { app, server } = require('./server');
+const app = require('./server');
 
 const PORT = process.env.PORT || 3001;
 

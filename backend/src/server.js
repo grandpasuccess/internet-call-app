@@ -49,4 +49,4 @@ app.use((err, req, res, _next) => {
 const server = http.createServer(app);
 initSocket(server);
 
-module.exports = app;
+module.exports = { app, server };
